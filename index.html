@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Paws & Preferences: Find Your Favourite Kitty</title>
     <style>
         * {
@@ -20,6 +20,9 @@
             align-items: center;
             padding: 20px;
             overflow-x: hidden;
+            touch-action: pan-y; /* Prevent double-tap zoom */
+            -webkit-user-select: none;
+            user-select: none;
         }
 
         .container {
@@ -31,6 +34,7 @@
             text-align: center;
             margin-bottom: 30px;
             color: white;
+            padding-right: 60px; /* Add padding to prevent overlap with sound button */
         }
 
         .header h1 {
@@ -79,6 +83,9 @@
             user-select: none;
             transition: transform 0.3s ease, opacity 0.3s ease;
             overflow: hidden;
+            will-change: transform; /* Hardware acceleration for smoother swiping */
+            -webkit-backface-visibility: hidden; /* Prevent flickering on iOS */
+            backface-visibility: hidden;
         }
 
         .cat-card:active {
@@ -124,8 +131,9 @@
             font-weight: bold;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.2s;
+            transition: opacity 0.1s ease-out; /* Faster transition for instant feedback */
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            will-change: opacity; /* Hardware acceleration hint */
         }
 
         .swipe-indicator.like {
@@ -184,6 +192,8 @@
             font-size: 32px;
             box-shadow: 0 5px 20px rgba(0,0,0,0.2);
             transition: transform 0.2s, box-shadow 0.2s;
+            touch-action: manipulation; /* Prevent double-tap zoom on buttons */
+            -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
         }
 
         .btn:hover:not(:disabled) {
@@ -217,11 +227,13 @@
             width: 50px;
             height: 50px;
             font-size: 24px;
-            position: absolute;
-            top: 20px;
-            right: 20px;
+            position: fixed; /* Changed from absolute to fixed */
+            top: 10px; /* Reduced from 20px */
+            right: 10px; /* Reduced from 20px */
             background: rgba(255,255,255,0.2);
             color: white;
+            z-index: 1000; /* Ensure it stays on top */
+            touch-action: manipulation;
         }
 
         .counter {
@@ -502,10 +514,11 @@
                 const scale = 1 - Math.min(reverseIdx * 0.03, 0.09);
                 
                 if (reverseIdx === 0) {
-                    card.style.transform = 'translateY(0) scale(1)';
+                    // Use transform3d for hardware acceleration
+                    card.style.transform = 'translate3d(0, 0, 0) scale(1)';
                     card.style.zIndex = allCards.length;
                 } else {
-                    card.style.transform = `translateY(${offset}px) scale(${scale})`;
+                    card.style.transform = `translate3d(0, ${offset}px, 0) scale(${scale})`;
                     card.style.zIndex = allCards.length - reverseIdx;
                 }
             });
@@ -583,15 +596,17 @@
             const deltaY = touch.clientY - startY;
             const rotation = deltaX * 0.1;
             
-            currentCard.style.transform = `translate(${deltaX}px, ${deltaY}px) rotate(${rotation}deg)`;
+            // Use transform3d for better mobile performance
+            currentCard.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0) rotate(${rotation}deg)`;
             
             const likeIndicator = currentCard.querySelector('.swipe-indicator.like');
             const nopeIndicator = currentCard.querySelector('.swipe-indicator.nope');
             
-            if (deltaX > 50) {
+            // Reduce threshold for faster visual feedback
+            if (deltaX > 30) {
                 likeIndicator.classList.add('visible');
                 nopeIndicator.classList.remove('visible');
-            } else if (deltaX < -50) {
+            } else if (deltaX < -30) {
                 nopeIndicator.classList.add('visible');
                 likeIndicator.classList.remove('visible');
             } else {
