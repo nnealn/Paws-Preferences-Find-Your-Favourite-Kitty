@@ -34,18 +34,22 @@
             text-align: center;
             margin-bottom: 30px;
             color: white;
-            padding-right: 60px; /* Add padding to prevent overlap with sound button */
+            position: relative;
         }
 
         .header h1 {
             font-size: 28px;
             margin-bottom: 10px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            display: block;
+            width: 100%;
         }
 
         .header p {
             font-size: 16px;
             opacity: 0.9;
+            display: block;
+            width: 100%;
         }
 
         .progress-container {
@@ -70,6 +74,7 @@
             width: 100%;
             height: 500px;
             perspective: 1000px;
+            -webkit-perspective: 1000px; /* iOS support */
         }
 
         .cat-card {
@@ -94,6 +99,7 @@
 
         .cat-card.swiping {
             transition: none;
+            -webkit-transition: none; /* iOS specific */
         }
 
         .cat-card.swiped-left {
@@ -577,7 +583,7 @@
         }
 
         function handleDragStart(e) {
-            if (currentCard !== e.currentTarget) return;
+            if (currentCard !== e.currentTarget || isAnimating) return;
             
             isDragging = true;
             currentCard.classList.add('swiping');
@@ -585,34 +591,46 @@
             const touch = e.type === 'touchstart' ? e.touches[0] : e;
             startX = touch.clientX;
             startY = touch.clientY;
+            
+            // Force hardware acceleration on touch start
+            if (e.type === 'touchstart') {
+                currentCard.style.transition = 'none';
+                currentCard.style.webkitTransition = 'none';
+            }
         }
 
         function handleDragMove(e) {
             if (!isDragging || currentCard !== e.currentTarget) return;
             
             e.preventDefault();
+            
             const touch = e.type === 'touchmove' ? e.touches[0] : e;
             const deltaX = touch.clientX - startX;
             const deltaY = touch.clientY - startY;
             const rotation = deltaX * 0.1;
             
-            // Use transform3d for better mobile performance
-            currentCard.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0) rotate(${rotation}deg)`;
-            
-            const likeIndicator = currentCard.querySelector('.swipe-indicator.like');
-            const nopeIndicator = currentCard.querySelector('.swipe-indicator.nope');
-            
-            // Reduce threshold for faster visual feedback
-            if (deltaX > 30) {
-                likeIndicator.classList.add('visible');
-                nopeIndicator.classList.remove('visible');
-            } else if (deltaX < -30) {
-                nopeIndicator.classList.add('visible');
-                likeIndicator.classList.remove('visible');
-            } else {
-                likeIndicator.classList.remove('visible');
-                nopeIndicator.classList.remove('visible');
-            }
+            // Use requestAnimationFrame for smoother performance
+            requestAnimationFrame(() => {
+                if (currentCard) {
+                    // Use transform3d for better mobile performance
+                    currentCard.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0) rotate(${rotation}deg)`;
+                    
+                    const likeIndicator = currentCard.querySelector('.swipe-indicator.like');
+                    const nopeIndicator = currentCard.querySelector('.swipe-indicator.nope');
+                    
+                    // Reduce threshold for faster visual feedback
+                    if (deltaX > 30) {
+                        likeIndicator.classList.add('visible');
+                        nopeIndicator.classList.remove('visible');
+                    } else if (deltaX < -30) {
+                        nopeIndicator.classList.add('visible');
+                        likeIndicator.classList.remove('visible');
+                    } else {
+                        likeIndicator.classList.remove('visible');
+                        nopeIndicator.classList.remove('visible');
+                    }
+                }
+            });
         }
 
         function handleDragEnd(e) {
@@ -628,6 +646,9 @@
                 const direction = deltaX > 0 ? 'right' : 'left';
                 finishSwipe(direction);
             } else {
+                // Re-enable transition for snap-back animation
+                currentCard.style.transition = 'transform 0.3s ease';
+                currentCard.style.webkitTransition = 'transform 0.3s ease';
                 currentCard.style.transform = '';
                 currentCard.querySelector('.swipe-indicator.like').classList.remove('visible');
                 currentCard.querySelector('.swipe-indicator.nope').classList.remove('visible');
