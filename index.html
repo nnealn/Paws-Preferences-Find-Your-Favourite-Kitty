@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paws & Preferences: Find Your Favourite Kitty</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
+
+        .card-container {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            perspective: 1000px;
+        }
+
+        .cat-card {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            cursor: grab;
+            user-select: none;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            overflow: hidden;
+        }
+
+        .cat-card:active {
+            cursor: grabbing;
+        }
+
+        .cat-card.swiping {
+            transition: none;
+        }
+
+        .cat-card.swiped-left {
+            animation: swipeLeft 0.5s ease-out forwards;
+        }
+
+        .cat-card.swiped-right {
+            animation: swipeRight 0.5s ease-out forwards;
+        }
+
+        @keyframes swipeLeft {
+            to {
+                transform: translateX(-150%) rotate(-30deg);
+                opacity: 0;
+            }
+        }
+
+        @keyframes swipeRight {
+            to {
+                transform: translateX(150%) rotate(30deg);
+                opacity: 0;
+            }
+        }
+
+        .cat-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .swipe-indicator {
+            position: absolute;
+            top: 50px;
+            font-size: 80px;
+            font-weight: bold;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .swipe-indicator.like {
+            right: 50px;
+            color: #4CAF50;
+            transform: rotate(20deg);
+        }
+
+        .swipe-indicator.nope {
+            left: 50px;
+            color: #f44336;
+            transform: rotate(-20deg);
+        }
+
+        .swipe-indicator.visible {
+            opacity: 1;
+        }
+
+        .cat-fact {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            color: white;
+            padding: 30px 20px 20px;
+            font-size: 14px;
+            line-height: 1.5;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .cat-card:hover .cat-fact {
+            opacity: 1;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-top: 80px;
+        }
+
+        .btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: none;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .btn:active:not(:disabled) {
+            transform: scale(0.95);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn.dislike {
+            color: #f44336;
+        }
+
+        .btn.like {
+            color: #4CAF50;
+        }
+
+        .btn.undo {
+            color: #FF9800;
+            font-size: 28px;
+        }
+
+        .btn.sound-toggle {
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .counter {
+            text-align: center;
+            color: white;
+            font-size: 18px;
+            margin-top: 20px;
+            opacity: 0.9;
+        }
+
+        .summary {
+            display: none;
+            text-align: center;
+            color: white;
+        }
+
+        .summary.active {
+            display: block;
+        }
+
+        .summary h2 {
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+
+        .summary p {
+            font-size: 20px;
+            margin-bottom: 30px;
+        }
+
+        .liked-cats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .liked-cat-img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .restart-btn {
+            margin-top: 30px;
+            padding: 15px 40px;
+            font-size: 18px;
+            background: white;
+            color: #667eea;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+
+        .restart-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #667eea;
+            font-size: 18px;
+        }
+
+        .keyboard-hint {
+            text-align: center;
+            color: white;
+            font-size: 14px;
+            margin-top: 15px;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="btn sound-toggle" id="soundToggle" onclick="toggleSound()">🔊</button>
+
+        <div class="header">
+            <h1>🐱 Paws & Preferences</h1>
+            <p>Swipe right to like, left to pass</p>
+        </div>
+
+        <div class="progress-container" id="progressContainer" style="display: none;">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <div class="main-view">
+            <div class="card-container" id="cardContainer">
+                <div class="loading">Loading cats...</div>
+            </div>
+
+            <div class="buttons" id="buttons" style="display: none;">
+                <button class="btn dislike" onclick="swipeCard('left')">✕</button>
+                <button class="btn undo" id="undoBtn" onclick="undoSwipe()" disabled>↶</button>
+                <button class="btn like" onclick="swipeCard('right')">♥</button>
+            </div>
+
+            <div class="keyboard-hint" id="keyboardHint" style="display: none;">
+                ← Arrow keys → or Space to undo
+            </div>
+
+            <div class="counter" id="counter" style="display: none;">
+                <span id="currentCard">0</span> / <span id="totalCards">0</span> cats
+            </div>
+        </div>
+
+        <div class="summary" id="summary">
+            <h2>✨ Results ✨</h2>
+            <p>You liked <strong id="likedCount">0</strong> out of <strong id="totalCount">0</strong> cats!</p>
+            <div class="liked-cats" id="likedCats"></div>
+            <button class="restart-btn" onclick="restartApp()">Start Over</button>
+        </div>
+    </div>
+
+    <script>
+        const TOTAL_CATS = 15;
+        let permanentCatUrls = []; // Store URLs permanently across sessions
+        let currentIndex = 0;
+        let likedCats = [];
+        let history = [];
+        let startX = 0;
+        let startY = 0;
+        let currentCard = null;
+        let isDragging = false;
+        let soundEnabled = true;
+        let isAnimating = false;
+        let undoDebounceTimer = null;
+        let imageCache = {}; // Cache preloaded images
+
+        const CAT_FACTS = [
+            "Cats spend 70% of their lives sleeping!",
+            "A group of cats is called a 'clowder'",
+            "Cats have over 20 vocalizations, including the purr",
+            "A cat's purr vibrates at 25-150 Hz, which can promote healing",
+            "Cats can rotate their ears 180 degrees",
+            "The first cat in space was French cat named Felicette in 1963",
+            "Cats have a third eyelid called a 'haw'",
+            "A cat's nose print is unique, like a human fingerprint",
+            "Cats can jump up to six times their length",
+            "Adult cats only meow to communicate with humans",
+            "Cats have more than 230 bones (humans have 206)",
+            "A cat's heart beats nearly twice as fast as a human heart",
+            "Cats can make over 100 different sounds",
+            "Cats use their whiskers to detect if they can fit through a space",
+            "The world's longest cat measured 48.5 inches"
+        ];
+
+        // Sound effects using Web Audio API
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            if (type === 'like') {
+                oscillator.frequency.value = 523.25;
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            } else if (type === 'dislike') {
+                oscillator.frequency.value = 220;
+                gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            } else if (type === 'undo') {
+                oscillator.frequency.value = 440;
+                gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.15);
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('soundToggle').textContent = soundEnabled ? '🔊' : '🔇';
+        }
+
+        // Preload an image and cache it
+        function preloadImage(url) {
+            return new Promise((resolve, reject) => {
+                if (imageCache[url]) {
+                    resolve(imageCache[url]);
+                    return;
+                }
+                
+                const img = new Image();
+                img.onload = () => {
+                    imageCache[url] = img;
+                    resolve(img);
+                };
+                img.onerror = reject;
+                img.src = url;
+            });
+        }
+
+        // Preload all cat images
+        async function preloadAllImages(urls) {
+            const promises = urls.map(url => preloadImage(url).catch(err => {
+                console.error('Failed to load image:', url, err);
+                return null;
+            }));
+            await Promise.all(promises);
+        }
+
+        // Initialize the app
+        async function init(forceNew = false) {
+            // Show loading message
+            const container = document.getElementById('cardContainer');
+            container.innerHTML = '<div class="loading">Loading cats...</div>';
+            
+            // Generate new URLs or use existing ones
+            if (permanentCatUrls.length === 0 || forceNew) {
+                const timestamp = Date.now();
+                permanentCatUrls = []; // Clear old URLs
+                imageCache = {}; // Clear image cache
+                
+                for (let i = 0; i < TOTAL_CATS; i++) {
+                    permanentCatUrls.push(`https://cataas.com/cat?width=400&height=500&t=${timestamp}&id=${i}`);
+                }
+                // Preload all images before showing cards
+                await preloadAllImages(permanentCatUrls);
+            }
+            
+            await loadCards();
+            document.getElementById('buttons').style.display = 'flex';
+            document.getElementById('counter').style.display = 'block';
+            document.getElementById('keyboardHint').style.display = 'block';
+            document.getElementById('progressContainer').style.display = 'block';
+            updateCounter();
+            updateProgressBar();
+        }
+
+        async function loadCards() {
+            const container = document.getElementById('cardContainer');
+            
+            // Properly clear all existing cards and remove event listeners
+            const existingCards = container.querySelectorAll('.cat-card');
+            existingCards.forEach(card => {
+                removeCardListeners(card);
+                card.remove();
+            });
+            
+            container.innerHTML = '';
+
+            for (let i = permanentCatUrls.length - 1; i >= 0; i--) {
+                const card = createCard(permanentCatUrls[i], i);
+                container.appendChild(card);
+            }
+
+            updateCardStack();
+            currentCard = container.querySelector('.cat-card:last-child');
+            if (currentCard) {
+                addCardListeners(currentCard);
+            }
+        }
+
+        function updateCardStack() {
+            const allCards = document.querySelectorAll('.cat-card');
+            allCards.forEach((card, idx) => {
+                const reverseIdx = allCards.length - 1 - idx;
+                const offset = Math.min(reverseIdx * 3, 9);
+                const scale = 1 - Math.min(reverseIdx * 0.03, 0.09);
+                
+                if (reverseIdx === 0) {
+                    card.style.transform = 'translateY(0) scale(1)';
+                    card.style.zIndex = allCards.length;
+                } else {
+                    card.style.transform = `translateY(${offset}px) scale(${scale})`;
+                    card.style.zIndex = allCards.length - reverseIdx;
+                }
+            });
+        }
+
+        function createCard(imageUrl, index) {
+            const card = document.createElement('div');
+            card.className = 'cat-card';
+            card.dataset.index = index;
+            
+            const img = document.createElement('img');
+            img.className = 'cat-image';
+            img.src = imageUrl;
+            img.alt = 'Cat';
+            
+            const likeIndicator = document.createElement('div');
+            likeIndicator.className = 'swipe-indicator like';
+            likeIndicator.textContent = 'LIKE';
+            
+            const nopeIndicator = document.createElement('div');
+            nopeIndicator.className = 'swipe-indicator nope';
+            nopeIndicator.textContent = 'NOPE';
+            
+            const factDiv = document.createElement('div');
+            factDiv.className = 'cat-fact';
+            factDiv.textContent = '💡 ' + CAT_FACTS[index % CAT_FACTS.length];
+            
+            card.appendChild(img);
+            card.appendChild(likeIndicator);
+            card.appendChild(nopeIndicator);
+            card.appendChild(factDiv);
+            
+            return card;
+        }
+
+        function addCardListeners(card) {
+            card.addEventListener('mousedown', handleDragStart);
+            card.addEventListener('mousemove', handleDragMove);
+            card.addEventListener('mouseup', handleDragEnd);
+            card.addEventListener('mouseleave', handleDragEnd);
+            
+            card.addEventListener('touchstart', handleDragStart);
+            card.addEventListener('touchmove', handleDragMove);
+            card.addEventListener('touchend', handleDragEnd);
+        }
+
+        function removeCardListeners(card) {
+            card.removeEventListener('mousedown', handleDragStart);
+            card.removeEventListener('mousemove', handleDragMove);
+            card.removeEventListener('mouseup', handleDragEnd);
+            card.removeEventListener('mouseleave', handleDragEnd);
+            
+            card.removeEventListener('touchstart', handleDragStart);
+            card.removeEventListener('touchmove', handleDragMove);
+            card.removeEventListener('touchend', handleDragEnd);
+        }
+
+        function handleDragStart(e) {
+            if (currentCard !== e.currentTarget) return;
+            
+            isDragging = true;
+            currentCard.classList.add('swiping');
+            
+            const touch = e.type === 'touchstart' ? e.touches[0] : e;
+            startX = touch.clientX;
+            startY = touch.clientY;
+        }
+
+        function handleDragMove(e) {
+            if (!isDragging || currentCard !== e.currentTarget) return;
+            
+            e.preventDefault();
+            const touch = e.type === 'touchmove' ? e.touches[0] : e;
+            const deltaX = touch.clientX - startX;
+            const deltaY = touch.clientY - startY;
+            const rotation = deltaX * 0.1;
+            
+            currentCard.style.transform = `translate(${deltaX}px, ${deltaY}px) rotate(${rotation}deg)`;
+            
+            const likeIndicator = currentCard.querySelector('.swipe-indicator.like');
+            const nopeIndicator = currentCard.querySelector('.swipe-indicator.nope');
+            
+            if (deltaX > 50) {
+                likeIndicator.classList.add('visible');
+                nopeIndicator.classList.remove('visible');
+            } else if (deltaX < -50) {
+                nopeIndicator.classList.add('visible');
+                likeIndicator.classList.remove('visible');
+            } else {
+                likeIndicator.classList.remove('visible');
+                nopeIndicator.classList.remove('visible');
+            }
+        }
+
+        function handleDragEnd(e) {
+            if (!isDragging || currentCard !== e.currentTarget) return;
+            
+            isDragging = false;
+            currentCard.classList.remove('swiping');
+            
+            const touch = e.type === 'touchend' ? e.changedTouches[0] : e;
+            const deltaX = touch.clientX - startX;
+            
+            if (Math.abs(deltaX) > 100) {
+                const direction = deltaX > 0 ? 'right' : 'left';
+                finishSwipe(direction);
+            } else {
+                currentCard.style.transform = '';
+                currentCard.querySelector('.swipe-indicator.like').classList.remove('visible');
+                currentCard.querySelector('.swipe-indicator.nope').classList.remove('visible');
+                updateCardStack();
+            }
+        }
+
+        function swipeCard(direction) {
+            if (!currentCard || isAnimating) return;
+            
+            isAnimating = true;
+            currentCard.classList.add(`swiped-${direction}`);
+            finishSwipe(direction);
+        }
+
+        function finishSwipe(direction) {
+            const swipedCatUrl = permanentCatUrls[currentIndex];
+            const liked = direction === 'right';
+            
+            // Prevent duplicate swipes
+            if (history.length > 0 && history[history.length - 1].index === currentIndex) {
+                isAnimating = false;
+                return;
+            }
+            
+            history.push({
+                index: currentIndex,
+                catUrl: swipedCatUrl,
+                liked: liked
+            });
+            
+            if (liked) {
+                likedCats.push(swipedCatUrl);
+                playSound('like');
+            } else {
+                playSound('dislike');
+            }
+            
+            document.getElementById('undoBtn').disabled = false;
+            
+            setTimeout(() => {
+                if (currentCard) {
+                    removeCardListeners(currentCard); // Remove listeners before removing card
+                    currentCard.remove();
+                }
+                
+                currentIndex++;
+                updateCounter();
+                updateProgressBar();
+                
+                if (currentIndex < permanentCatUrls.length) {
+                    const container = document.getElementById('cardContainer');
+                    currentCard = container.querySelector('.cat-card:last-child');
+                    if (currentCard) {
+                        addCardListeners(currentCard);
+                        updateCardStack();
+                    }
+                    isAnimating = false;
+                } else {
+                    showSummary();
+                    isAnimating = false;
+                }
+            }, 300);
+        }
+
+        function undoSwipe() {
+            if (history.length === 0 || isAnimating) return;
+            
+            // Debounce rapid undo clicks
+            if (undoDebounceTimer) {
+                clearTimeout(undoDebounceTimer);
+            }
+            
+            undoDebounceTimer = setTimeout(() => {
+                performUndo();
+                undoDebounceTimer = null;
+            }, 150); // 150ms debounce
+        }
+
+        function performUndo() {
+            if (history.length === 0 || isAnimating) return;
+            
+            isAnimating = true;
+            playSound('undo');
+            
+            const lastAction = history.pop();
+            
+            if (lastAction.liked) {
+                const index = likedCats.indexOf(lastAction.catUrl);
+                if (index > -1) {
+                    likedCats.splice(index, 1);
+                }
+            }
+            
+            currentIndex = lastAction.index;
+            
+            const container = document.getElementById('cardContainer');
+            const newCard = createCard(lastAction.catUrl, lastAction.index);
+            container.appendChild(newCard);
+            
+            updateCardStack();
+            currentCard = newCard;
+            addCardListeners(currentCard);
+            
+            updateCounter();
+            updateProgressBar();
+            
+            if (history.length === 0) {
+                document.getElementById('undoBtn').disabled = true;
+            }
+            
+            // Small delay before allowing next action
+            setTimeout(() => {
+                isAnimating = false;
+            }, 100);
+        }
+
+        function updateCounter() {
+            document.getElementById('currentCard').textContent = currentIndex;
+            document.getElementById('totalCards').textContent = permanentCatUrls.length;
+        }
+
+        function updateProgressBar() {
+            const progress = (currentIndex / permanentCatUrls.length) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+
+        function showSummary() {
+            document.querySelector('.main-view').style.display = 'none';
+            document.getElementById('progressContainer').style.display = 'none';
+            const summary = document.getElementById('summary');
+            summary.classList.add('active');
+            
+            document.getElementById('likedCount').textContent = likedCats.length;
+            document.getElementById('totalCount').textContent = permanentCatUrls.length;
+            
+            const likedCatsContainer = document.getElementById('likedCats');
+            likedCatsContainer.innerHTML = '';
+            
+            if (likedCats.length === 0) {
+                likedCatsContainer.innerHTML = '<p style="grid-column: 1/-1; color: white;">You didn\'t like any cats 😿</p>';
+            } else {
+                likedCats.forEach(catUrl => {
+                    const img = document.createElement('img');
+                    img.className = 'liked-cat-img';
+                    img.src = catUrl;
+                    img.alt = 'Liked cat';
+                    likedCatsContainer.appendChild(img);
+                });
+            }
+        }
+
+        function restartApp() {
+            // Reset all state completely
+            currentIndex = 0;
+            likedCats = [];
+            history = [];
+            isDragging = false;
+            isAnimating = false;
+            currentCard = null;
+            
+            // Clear any pending timers
+            if (undoDebounceTimer) {
+                clearTimeout(undoDebounceTimer);
+                undoDebounceTimer = null;
+            }
+            
+            document.getElementById('summary').classList.remove('active');
+            document.querySelector('.main-view').style.display = 'block';
+            document.getElementById('undoBtn').disabled = true;
+            
+            // Reload with NEW cats (forceNew = true)
+            init(true);
+        }
+
+        // Keyboard controls
+        let keyPressed = {};
+        
+        document.addEventListener('keydown', (e) => {
+            if (document.getElementById('summary').classList.contains('active')) return;
+            
+            if (keyPressed[e.key]) return;
+            keyPressed[e.key] = true;
+            
+            if (e.key === 'ArrowLeft') {
+                swipeCard('left');
+            } else if (e.key === 'ArrowRight') {
+                swipeCard('right');
+            } else if (e.key === ' ' && !document.getElementById('undoBtn').disabled) {
+                e.preventDefault();
+                undoSwipe();
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keyPressed[e.key] = false;
+        });
+
+        // Start the app
+        init();
+    </script>
+</body>
+</html>
