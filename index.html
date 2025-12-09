@@ -35,8 +35,8 @@
             margin-bottom: 30px;
             color: white;
             position: relative;
-            padding-left: 60px; /* Shift more to the right */
-            margin-right: -10px; /* Fine-tune centering */
+            padding-left: 55px; /* Slightly less padding for better centering */
+            margin-right: -5px; /* Fine-tune centering */
         }
 
         .header h1 {
@@ -683,9 +683,11 @@
             
             // Add animation class after showing indicator
             setTimeout(() => {
-                currentCard.classList.add(`swiped-${direction}`);
-                finishSwipe(direction);
-            }, 100);
+                if (currentCard) {
+                    currentCard.classList.add(`swiped-${direction}`);
+                    finishSwipe(direction);
+                }
+            }, 200); // Increased delay for mobile visibility
         }
 
         function finishSwipe(direction) {
