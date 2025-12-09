@@ -145,6 +145,7 @@
             transition: opacity 0.1s ease-out; /* Faster transition for instant feedback */
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
             will-change: opacity; /* Hardware acceleration hint */
+            z-index: 10; /* Ensure it's above the image */
         }
 
         .swipe-indicator.like {
@@ -160,7 +161,7 @@
         }
 
         .swipe-indicator.visible {
-            opacity: 1;
+            opacity: 1 !important; /* Force visibility */
         }
 
         .cat-fact {
@@ -671,23 +672,28 @@
             
             isAnimating = true;
             
-            // Show the appropriate indicator briefly when using buttons
+            // Show the appropriate indicator when using buttons
             const likeIndicator = currentCard.querySelector('.swipe-indicator.like');
             const nopeIndicator = currentCard.querySelector('.swipe-indicator.nope');
             
             if (direction === 'right') {
                 likeIndicator.classList.add('visible');
+                nopeIndicator.classList.remove('visible');
             } else {
                 nopeIndicator.classList.add('visible');
+                likeIndicator.classList.remove('visible');
             }
             
-            // Add animation class after showing indicator
+            // Force a reflow to ensure the indicator is rendered
+            void currentCard.offsetWidth;
+            
+            // Longer delay for mobile to see the indicator
             setTimeout(() => {
                 if (currentCard) {
                     currentCard.classList.add(`swiped-${direction}`);
                     finishSwipe(direction);
                 }
-            }, 200); // Increased delay for mobile visibility
+            }, 300); // Increased to 300ms for better mobile visibility
         }
 
         function finishSwipe(direction) {
