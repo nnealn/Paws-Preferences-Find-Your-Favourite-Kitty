@@ -645,7 +645,7 @@
             });
         }
 
-        function handleDragEnd(e) {
+   function handleDragEnd(e) {
             if (!isDragging || currentCard !== e.currentTarget) return;
             
             isDragging = false;
@@ -653,18 +653,25 @@
             
             const touch = e.type === 'touchend' ? e.changedTouches[0] : e;
             const deltaX = touch.clientX - startX;
+            const deltaY = touch.clientY - startY;
             
-            if (Math.abs(deltaX) > 100) {
+            // Only swipe if horizontal movement is significant AND greater than vertical movement
+            if (Math.abs(deltaX) > 100 && Math.abs(deltaX) > Math.abs(deltaY)) {
                 const direction = deltaX > 0 ? 'right' : 'left';
                 finishSwipe(direction);
             } else {
+                // Snap back to center for any other movement (including vertical drags)
                 // Re-enable transition for snap-back animation
                 currentCard.style.transition = 'transform 0.3s ease';
                 currentCard.style.webkitTransition = 'transform 0.3s ease';
                 currentCard.style.transform = '';
                 currentCard.querySelector('.swipe-indicator.like').classList.remove('visible');
                 currentCard.querySelector('.swipe-indicator.nope').classList.remove('visible');
-                updateCardStack();
+                
+                // Small delay to ensure transform is applied, then update card stack
+                setTimeout(() => {
+                    updateCardStack();
+                }, 50);
             }
         }
 
@@ -885,6 +892,7 @@
     </script>
 </body>
 </html>
+
 
 
 
