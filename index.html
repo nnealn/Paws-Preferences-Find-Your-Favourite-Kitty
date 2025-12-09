@@ -35,7 +35,8 @@
             margin-bottom: 30px;
             color: white;
             position: relative;
-            padding-left: 50px; /* Shift right to compensate for sound button */
+            padding-left: 60px; /* Shift more to the right */
+            margin-right: -10px; /* Fine-tune centering */
         }
 
         .header h1 {
@@ -129,6 +130,9 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            pointer-events: none; /* Prevent image from being dragged */
+            user-select: none;
+            -webkit-user-drag: none; /* Prevent image drag on Safari */
         }
 
         .swipe-indicator {
@@ -586,6 +590,11 @@
         function handleDragStart(e) {
             if (currentCard !== e.currentTarget || isAnimating) return;
             
+            // Prevent default drag behavior on desktop
+            if (e.type === 'mousedown') {
+                e.preventDefault();
+            }
+            
             isDragging = true;
             currentCard.classList.add('swiping');
             
@@ -661,8 +670,22 @@
             if (!currentCard || isAnimating) return;
             
             isAnimating = true;
-            currentCard.classList.add(`swiped-${direction}`);
-            finishSwipe(direction);
+            
+            // Show the appropriate indicator briefly when using buttons
+            const likeIndicator = currentCard.querySelector('.swipe-indicator.like');
+            const nopeIndicator = currentCard.querySelector('.swipe-indicator.nope');
+            
+            if (direction === 'right') {
+                likeIndicator.classList.add('visible');
+            } else {
+                nopeIndicator.classList.add('visible');
+            }
+            
+            // Add animation class after showing indicator
+            setTimeout(() => {
+                currentCard.classList.add(`swiped-${direction}`);
+                finishSwipe(direction);
+            }, 100);
         }
 
         function finishSwipe(direction) {
