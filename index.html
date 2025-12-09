@@ -11,19 +11,20 @@
             box-sizing: border-box;
         }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            overflow-x: hidden;
-            touch-action: pan-y; /* Prevent double-tap zoom */
-            -webkit-user-select: none;
-            user-select: none;
-        }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    overflow-x: hidden;
+    touch-action: pan-y;
+    -webkit-user-select: none;
+    user-select: none;
+    overscroll-behavior: none; 
+}
 
         .container {
             max-width: 400px;
@@ -80,21 +81,22 @@
             -webkit-perspective: 1000px; /* iOS support */
         }
 
-        .cat-card {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-            cursor: grab;
-            user-select: none;
-            transition: transform 0.3s ease, opacity 0.3s ease;
-            overflow: hidden;
-            will-change: transform; /* Hardware acceleration for smoother swiping */
-            -webkit-backface-visibility: hidden; /* Prevent flickering on iOS */
-            backface-visibility: hidden;
-        }
+.cat-card {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    cursor: grab;
+    user-select: none;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    overflow: hidden;
+    will-change: transform;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    touch-action: none;  
+}
 
         .cat-card:active {
             cursor: grabbing;
@@ -611,39 +613,41 @@
             }
         }
 
-        function handleDragMove(e) {
-            if (!isDragging || currentCard !== e.currentTarget) return;
-            
-            e.preventDefault();
-            
-            const touch = e.type === 'touchmove' ? e.touches[0] : e;
-            const deltaX = touch.clientX - startX;
-            const deltaY = touch.clientY - startY;
-            const rotation = deltaX * 0.1;
-            
-            // Use requestAnimationFrame for smoother performance
-            requestAnimationFrame(() => {
-                if (currentCard) {
-                    // Use transform3d for better mobile performance
-                    currentCard.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0) rotate(${rotation}deg)`;
-                    
-                    const likeIndicator = currentCard.querySelector('.swipe-indicator.like');
-                    const nopeIndicator = currentCard.querySelector('.swipe-indicator.nope');
-                    
-                    // Reduce threshold for faster visual feedback
-                    if (deltaX > 30) {
-                        likeIndicator.classList.add('visible');
-                        nopeIndicator.classList.remove('visible');
-                    } else if (deltaX < -30) {
-                        nopeIndicator.classList.add('visible');
-                        likeIndicator.classList.remove('visible');
-                    } else {
-                        likeIndicator.classList.remove('visible');
-                        nopeIndicator.classList.remove('visible');
-                    }
-                }
-            });
+      function handleDragMove(e) {
+    if (!isDragging || currentCard !== e.currentTarget) return;
+    
+    // Prevent default to stop scrolling
+    if (e.cancelable) {  /* <-- CHANGED: Added check */
+        e.preventDefault();
+    }
+    
+    const touch = e.type === 'touchmove' ? e.touches[0] : e;
+    const deltaX = touch.clientX - startX;
+    const deltaY = touch.clientY - startY;
+    const rotation = deltaX * 0.1;
+    
+    // Direct manipulation without requestAnimationFrame for immediate response
+    // <-- REMOVED: The requestAnimationFrame wrapper that was here
+    if (currentCard) {
+        // Use transform3d for better mobile performance
+        currentCard.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0) rotate(${rotation}deg)`;
+        
+        const likeIndicator = currentCard.querySelector('.swipe-indicator.like');
+        const nopeIndicator = currentCard.querySelector('.swipe-indicator.nope');
+        
+        // Reduce threshold for faster visual feedback
+        if (deltaX > 30) {
+            likeIndicator.classList.add('visible');
+            nopeIndicator.classList.remove('visible');
+        } else if (deltaX < -30) {
+            nopeIndicator.classList.add('visible');
+            likeIndicator.classList.remove('visible');
+        } else {
+            likeIndicator.classList.remove('visible');
+            nopeIndicator.classList.remove('visible');
         }
+    }
+}
 
 
         function handleDragEnd(e) {
@@ -892,6 +896,7 @@
     </script>
 </body>
 </html>
+
 
 
 
